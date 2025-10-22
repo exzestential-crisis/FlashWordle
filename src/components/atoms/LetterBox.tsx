@@ -6,7 +6,7 @@ type Props = {
 export default function LetterBox({ letter, colorClass }: Props) {
   return (
     <div
-      className={`w-10 h-10 border flex items-center justify-center text-xl font-bold ${colorClass}`}
+      className={`w-14 h-14 rounded-xl flex items-center justify-center text-3xl font-black uppercase ${colorClass} transition-all duration-200 transform hover:scale-105`}
     >
       {letter}
     </div>

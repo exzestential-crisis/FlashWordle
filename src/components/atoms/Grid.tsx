@@ -16,7 +16,7 @@ export default function Grid({
   shakeRow = null,
 }: Props) {
   return (
-    <div className="grid grid-rows-6 gap-1">
+    <div className="grid grid-rows-6 gap-2 p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl shadow-inner">
       {guesses.map((row, i) => (
         <Row
           key={i}

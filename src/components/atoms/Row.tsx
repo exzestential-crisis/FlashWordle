@@ -18,7 +18,7 @@ export default function Row({
   shake = false,
 }: Props) {
   return (
-    <div className={`grid grid-cols-5 gap-1 ${shake ? "shake" : ""}`}>
+    <div className={`grid grid-cols-5 gap-2 ${shake ? "shake" : ""}`}>
       {Array.from({ length: 5 }).map((_, j) => {
         const letter = rowIdx === currentRow ? currentGuess[j] : guess[j] || "";
         const colorClass = getLetterColor(letter, j, rowIdx);

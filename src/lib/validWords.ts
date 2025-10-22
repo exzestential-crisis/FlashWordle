@@ -1,5 +1,4 @@
-// lib/validWords.ts
-import validWordsJson from "./validWords.json";
+import validWords from "./validWords.json" assert { type: "json" };
 
-export const VALID_WORDS: string[] = validWordsJson as string[];
-export const VALID_WORDS_SET = new Set(VALID_WORDS); // for fast lookup
+export const VALID_WORDS = validWords as string[];
+export const VALID_WORDS_SET = new Set<string>(VALID_WORDS);

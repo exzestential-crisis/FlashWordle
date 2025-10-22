@@ -5,6 +5,16 @@
   --foreground: #171717;
 }
 
+@theme {
+  --color-brand: #0ea5e9;
+  --color-brand-light: #38bdf8;
+  --color-brand-dark: #0284c7;
+  --color-accent: #fdc700;
+  --color-accent-light: #ffdf20;
+  --color-danger: #e64342;
+  --color-danger-light: #ee6e6c;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

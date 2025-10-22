@@ -14,9 +14,10 @@ import {
   limit,
   onSnapshot,
 } from "firebase/firestore";
-import { WORD_LIST, getDailyWord } from "@/lib/words";
+import { VALID_WORDS_SET, GAME_WORDS, getDailyWord } from "@/lib/words";
 import { Keyboard, Grid } from "./atoms";
 import WinModal from "./WinModal";
+import BaseButton from "./BaseButton";
 
 type Props = {
   user: { displayName: string; uid: string };
@@ -33,13 +34,13 @@ export default function WordleGame({ user, onLogout }: Props) {
   const [currentGuess, setCurrentGuess] = useState("");
   const [score, setScore] = useState(0);
   const [solved, setSolved] = useState(false);
+  const [lost, setLost] = useState(false);
   const [dailyPlayed, setDailyPlayed] = useState(false);
   const [shakeRow, setShakeRow] = useState<number | null>(null);
   const [leaderboard, setLeaderboard] = useState<
     { username: string; score: number }[]
   >([]);
 
-  // ----------- FIRESTORE: Init user doc & score ----------- //
   useEffect(() => {
     const docRef = doc(db, "scores", user.uid);
     setDoc(
@@ -62,7 +63,6 @@ export default function WordleGame({ user, onLogout }: Props) {
     });
   }, [user]);
 
-  // ----------- LEADERBOARD ----------- //
   useEffect(() => {
     const q = query(
       collection(db, "scores"),
@@ -75,21 +75,18 @@ export default function WordleGame({ user, onLogout }: Props) {
     return () => unsub();
   }, []);
 
-  // ----------- HANDLE KEY PRESS ----------- //
   const handleKey = (key: string) => {
-    if (solved || currentRow >= ROWS) return;
+    if (solved || lost || currentRow >= ROWS) return;
 
     if (key === "Enter") {
       if (currentGuess.length !== COLS) {
-        // Shake if incomplete
         setShakeRow(currentRow);
         setTimeout(() => setShakeRow(null), 300);
         return;
       }
 
       const guessUpper = currentGuess.toUpperCase();
-      if (!WORD_LIST.includes(guessUpper)) {
-        // Shake if invalid word
+      if (!VALID_WORDS_SET.has(guessUpper)) {
         setShakeRow(currentRow);
         setTimeout(() => setShakeRow(null), 300);
         return;
@@ -102,8 +99,11 @@ export default function WordleGame({ user, onLogout }: Props) {
       markWordPlayed(guessUpper);
 
       if (guessUpper === WORD) {
-        incrementScore();
+        const pointsEarned = 10 - currentRow;
+        incrementScore(pointsEarned);
         setSolved(true);
+      } else if (currentRow + 1 >= ROWS) {
+        setLost(true);
       }
 
       setCurrentRow(currentRow + 1);
@@ -115,9 +115,8 @@ export default function WordleGame({ user, onLogout }: Props) {
     }
   };
 
-  // ----------- SCORE ----------- //
-  const incrementScore = async () => {
-    const newScore = score + 1;
+  const incrementScore = async (points = 1) => {
+    const newScore = score + points;
     setScore(newScore);
     await updateDoc(doc(db, "scores", user.uid), {
       score: newScore,
@@ -125,7 +124,6 @@ export default function WordleGame({ user, onLogout }: Props) {
     });
   };
 
-  // ----------- MARK WORD AS PLAYED ----------- //
   const markWordPlayed = async (word: string) => {
     const docRef = doc(db, "scores", user.uid);
     const docSnap = await getDoc(docRef);
@@ -136,19 +134,17 @@ export default function WordleGame({ user, onLogout }: Props) {
     }
   };
 
-  // ----------- LOGOUT ----------- //
   const handleLogout = async () => {
     await signOut(auth);
     onLogout();
   };
 
-  // ----------- PLAY AGAIN ----------- //
   const playAgain = async (daily = false) => {
     let nextWord = daily ? getDailyWord() : WORD;
     if (!daily) {
       const docSnap = await getDoc(doc(db, "scores", user.uid));
       const playedWords: string[] = docSnap.data()?.playedWords || [];
-      const unplayed = WORD_LIST.filter((w) => !playedWords.includes(w));
+      const unplayed = GAME_WORDS.filter((w) => !playedWords.includes(w));
       if (unplayed.length > 0) {
         nextWord = unplayed[Math.floor(Math.random() * unplayed.length)];
       }
@@ -158,37 +154,39 @@ export default function WordleGame({ user, onLogout }: Props) {
     setCurrentRow(0);
     setCurrentGuess("");
     setSolved(false);
+    setLost(false);
   };
 
-  // ----------- LISTEN TO KEYBOARD ----------- //
   useEffect(() => {
     const listener = (e: KeyboardEvent) => handleKey(e.key);
     window.addEventListener("keydown", listener);
     return () => window.removeEventListener("keydown", listener);
   });
 
-  // ----------- GET LETTER COLOR ----------- //
   const getLetterColor = (letter: string, idx: number, rowIdx: number) => {
-    if (rowIdx >= currentRow) return "border";
-    if (letter === WORD[idx]) return "bg-sky-400 text-white";
-    if (WORD.includes(letter)) return "bg-yellow-400 text-white";
-    return "bg-gray-400 text-white";
+    if (rowIdx >= currentRow) return "border-4 border-gray-300 bg-white";
+    if (letter === WORD[idx])
+      return "bg-brand border-4 border-brand-dark text-white";
+    if (WORD.includes(letter))
+      return "bg-accent border-4 border-yellow-600 text-gray-800";
+    return "bg-gray-400 border-4 border-gray-500 text-white";
   };
 
   return (
-    <div className="border p-4 rounded w-96 flex flex-col gap-4 items-center">
+    <div className="bg-white rounded-3xl shadow-2xl py-4 px-8 flex flex-col gap-4 items-center">
       {/* Header */}
-      <div className="flex justify-between w-full">
-        <div>
-          <p>Player: {user.displayName}</p>
-          <p>Score: {score}</p>
+      <div className="flex justify-between items-center w-full">
+        <div className="flex gap-4 bg-brand-light rounded-2xl px-6 py-3 shadow-lg">
+          <p className="text-white font-black text-lg">{user.displayName}</p>
+          <p className="text-white text-lg font-bold">Score: {score}</p>
         </div>
-        <button
+        <BaseButton
           onClick={handleLogout}
-          className="bg-red-600 text-white px-3 py-1 rounded mt-2"
+          variant="danger"
+          rounded="rounded-2xl"
         >
-          Logout
-        </button>
+          <span className="font-bold">Logout</span>
+        </BaseButton>
       </div>
 
       {/* Grid */}
@@ -211,6 +209,19 @@ export default function WordleGame({ user, onLogout }: Props) {
       {/* Win Modal */}
       {solved && (
         <WinModal
+          won={true}
+          word={WORD}
+          leaderboard={leaderboard}
+          dailyPlayed={dailyPlayed}
+          onPlayAgain={playAgain}
+        />
+      )}
+
+      {/* Lose Modal */}
+      {lost && (
+        <WinModal
+          won={false}
+          word={WORD}
           leaderboard={leaderboard}
           dailyPlayed={dailyPlayed}
           onPlayAgain={playAgain}

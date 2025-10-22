@@ -1,5 +1,4 @@
 "use client";
-
 import React from "react";
 
 type Props = {
@@ -21,9 +20,7 @@ export default function Keyboard({
   currentRow,
   WORD,
 }: Props) {
-  // Compute letter states from all past guesses
   const keyStates: Record<string, "correct" | "present" | "absent"> = {};
-
   for (let i = 0; i < currentRow; i++) {
     const guess = guesses[i] || "";
     for (let j = 0; j < guess.length; j++) {
@@ -31,7 +28,6 @@ export default function Keyboard({
       if (letter === WORD[j]) {
         keyStates[letter] = "correct";
       } else if (WORD.includes(letter)) {
-        // Only upgrade if not already correct
         if (keyStates[letter] !== "correct") keyStates[letter] = "present";
       } else {
         if (!keyStates[letter]) keyStates[letter] = "absent";
@@ -41,33 +37,33 @@ export default function Keyboard({
 
   const getKeyClass = (key: string) => {
     let base =
-      "px-2 py-2 rounded text-sm font-bold flex-1 text-center border transition-colors duration-150";
-    if (key.length === 1) base += " w-10";
-    if (key === "Enter" || key === "Backspace") base += " w-16 bg-gray-200";
-
+      "px-3 py-3 rounded-xl text-sm font-bold flex-1 text-center transition-all duration-150 transform active:scale-95 shadow-md";
+    if (key.length === 1) base += " min-w-[2.5rem]";
+    if (key === "Enter" || key === "Backspace")
+      base += " min-w-[4rem] bg-gray-300 text-gray-800 hover:bg-gray-400";
     if (key.length === 1) {
       switch (keyStates[key]) {
         case "correct":
-          base += " bg-sky-400 text-white";
+          base += " bg-brand text-white shadow-brand-dark";
           break;
         case "present":
-          base += " bg-yellow-400 text-white";
+          base += " bg-accent text-gray-800 shadow-yellow-600";
           break;
         case "absent":
-          base += " bg-gray-400 text-white";
+          base += " bg-gray-500 text-white shadow-gray-600";
           break;
         default:
-          base += " bg-white";
+          base +=
+            " bg-white text-gray-800 hover:bg-gray-100 border-2 border-gray-300";
       }
     }
-
     return base;
   };
 
   return (
-    <div className="flex flex-col gap-1 select-none mt-2">
+    <div className="flex flex-col gap-2 select-none mt-2 w-full max-w-lg">
       {KEYS.map((row, i) => (
-        <div key={i} className="flex justify-center gap-1">
+        <div key={i} className="flex justify-center gap-1.5">
           {row.map((key) => (
             <button
               key={key}
